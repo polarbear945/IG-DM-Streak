@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram DM Streak</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #007bff;
+        }
+        .file-input-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .file-label {
+            background-color: #007bff;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: inline-block;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .file-name {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #555;
+        }
+        .section {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            background: #f8f9fa;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+        p {
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Instagram DM Streak</h2>
+        <div class="file-input-wrapper">
+            <label for="fileInput" class="file-label">Choose File</label>
+            <input type="file" id="fileInput" accept="application/json" onchange="updateFileName()">
+            <button onclick="processFile()">Upload</button>
+            <p id="fileName" class="file-name"></p>
+        </div>
+        <div class="section" id="streakStats">
+            <p>Upload a file to see the results.</p>
+        </div>
+    </div>
+    
+    <script>
+        function updateFileName() {
+            const fileInput = document.getElementById('fileInput');
+            const fileNameDisplay = document.getElementById('fileName');
+            fileNameDisplay.textContent = fileInput.files.length > 0 ? fileInput.files[0].name : '';
+        }
+
+        function processFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = JSON.parse(e.target.result);
+                    calculateStreak(data);
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        function calculateStreak(data) {
+            const messages = data.messages || [];
+            let streak = { longest: 0, current: 0, start: null, end: null };
+            let lastDate = null;
+            let currentStreakStart = null;
+            let uniqueDates = new Set();
+
+            messages.forEach(msg => {
+                const date = new Date(msg.timestamp_ms);
+                const formattedDate = date.toISOString().split('T')[0]; // YYYY-MM-DD
+                uniqueDates.add(formattedDate);
+            });
+            
+            const sortedDates = Array.from(uniqueDates).sort();
+
+            sortedDates.forEach((date, index) => {
+                if (index === 0 || new Date(date) - new Date(sortedDates[index - 1]) === 86400000) {
+                    if (streak.current === 0) {
+                        currentStreakStart = date;
+                    }
+                    streak.current++;
+                } else {
+                    if (streak.current > streak.longest) {
+                        streak.longest = streak.current;
+                        streak.start = new Date(currentStreakStart).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                        streak.end = new Date(sortedDates[index - 1]).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                    }
+                    streak.current = 1;
+                    currentStreakStart = date;
+                }
+            });
+            
+            if (streak.current > streak.longest) {
+                streak.longest = streak.current;
+                streak.start = new Date(currentStreakStart).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                streak.end = new Date(sortedDates[sortedDates.length - 1]).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            }
+            
+            displayStreak(streak);
+        }
+
+        function displayStreak(streak) {
+            let streakDiv = document.getElementById('streakStats');
+            streakDiv.innerHTML = `<p><strong>Longest streak:</strong> ${streak.longest} days</p>`;
+            streakDiv.innerHTML += `<p><strong>From:</strong> ${streak.start} <strong>To:</strong> ${streak.end}</p>`;
+        }
+    </script>
+</body>
+</html>

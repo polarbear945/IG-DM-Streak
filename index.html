@@ -112,7 +112,8 @@
 
             messages.forEach(msg => {
                 const date = new Date(msg.timestamp_ms);
-                const formattedDate = date.toISOString().split('T')[0]; // YYYY-MM-DD
+                date.setDate(date.getDate() + 1);
+                const formattedDate = date.toISOString().split('T')[0];
                 uniqueDates.add(formattedDate);
             });
             
